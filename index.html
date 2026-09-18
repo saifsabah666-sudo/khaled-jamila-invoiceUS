@@ -15,16 +15,22 @@
         }
         .invoice-container {
             font-size: 13px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 12px;
+            box-sizing: border-box;
         }
         .invoice-table th, .invoice-table td {
-            padding-top: 2px !important;
-            padding-bottom: 2px !important;
-            padding-left: 4px !important;
-            padding-right: 4px !important;
+            padding-top: 4px !important;
+            padding-bottom: 4px !important;
+            padding-left: 6px !important;
+            padding-right: 6px !important;
             font-size: 12px !important;
         }
         
-        /* إعدادات الطباعة المباشرة: إخفاء الأزرار وجعل الخلفية بيضاء بالكامل */
+        /* إعدادات الطباعة المباشرة لتناسب الهواتف والشاشات بدقة */
         @media print {
             .no-print {
                 display: none !important;
@@ -37,16 +43,16 @@
             .invoice-container {
                 border: none !important;
                 box-shadow: none !important;
-                margin: 0 auto !important;
                 width: 100% !important;
                 max-width: 100% !important;
+                padding: 0 !important;
             }
         }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen py-2 px-1">
 
-    <div class="invoice-container max-w-2xl mx-auto bg-white rounded-lg shadow-md p-3 border-2 border-black">
+    <div class="invoice-container rounded-lg shadow-md border-2 border-black">
         
         <!-- رأس الفاتورة -->
         <div class="text-center border-b-2 border-black pb-2 mb-2">
@@ -72,7 +78,7 @@
             </div>
             <div class="flex flex-col">
                 <label class="mb-0.5">حضرة السيد:</label>
-                <input type="text" id="custName" oninput="saveCustName(this.value)" placeholder="اسم الزبون" class="border-2 border-black rounded p-1 bg-gray-50 text-xs">
+                <input type="text" id="custName" placeholder="اسم الزبون" class="border-2 border-black rounded p-1 bg-gray-50 text-xs">
             </div>
             <div class="flex flex-col">
                 <label class="mb-0.5">العنوان:</label>
@@ -155,7 +161,6 @@
         let editingIndex = -1;
         const MAX_ROWS = 30;
         const STORAGE_NUM_KEY = 'kj_inv_num_v1';
-        const STORAGE_NAME_KEY = 'kj_cust_name_v1';
 
         function padNum(n) { return String(n).padStart(6, '0'); }
 
@@ -163,19 +168,11 @@
             const savedNum = localStorage.getItem(STORAGE_NUM_KEY);
             const currentNum = savedNum !== null ? savedNum : 1;
             document.getElementById('invNumber').value = padNum(currentNum);
-
-            const savedName = localStorage.getItem(STORAGE_NAME_KEY);
-            if (savedName !== null) {
-                document.getElementById('custName').value = savedName;
-            }
+            // حقول اسم الزبون والعنوان والمواد تبدأ فارغة دائماً لزبون جديد
         }
 
         function saveInvNum(val) {
             localStorage.setItem(STORAGE_NUM_KEY, val);
-        }
-
-        function saveCustName(val) {
-            localStorage.setItem(STORAGE_NAME_KEY, val);
         }
 
         function incrementInvNum() {
@@ -260,6 +257,8 @@
         function clearForm() {
             items = [];
             clearFormInputs();
+            document.getElementById('custName').value = '';
+            document.getElementById('custAddress').value = '';
             renderTable();
         }
 
@@ -297,10 +296,19 @@
             document.getElementById('totalQtyText').innerText = totalQuantity + ' قطعة';
         }
 
+        function resetAfterPrint() {
+            items = [];
+            document.getElementById('custName').value = '';
+            document.getElementById('custAddress').value = '';
+            clearFormInputs();
+            renderTable();
+            incrementInvNum();
+        }
+
         function printInvoice() {
             if (items.length === 0) { alert('لا يمكن طباعة فاتورة فارغة'); return; }
             window.print();
-            incrementInvNum();
+            resetAfterPrint();
         }
 
         function downloadPDF() {
@@ -309,23 +317,22 @@
             const invNum = document.getElementById('invNumber').value || '000001';
             const custName = document.getElementById('custName').value.trim();
             
-            // اسم الملف يتكون من اسم الزبون ورقم الفاتورة (أو رقم الفاتورة فقط إن لم يُكتب الاسم)
             const fileName = custName ? `${custName}_${invNum}.pdf` : `${invNum}.pdf`;
             
             const noPrintElements = element.querySelectorAll('.no-print');
             noPrintElements.forEach(el => el.style.display = 'none');
 
             const opt = {
-                margin:     5,
+                margin:     2,
                 filename:   fileName,
                 image:      { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
+                html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
                 jsPDF:      { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
             html2pdf().from(element).set(opt).save().then(() => {
                 noPrintElements.forEach(el => el.style.display = '');
-                incrementInvNum();
+                resetAfterPrint();
             });
         }
     </script>
