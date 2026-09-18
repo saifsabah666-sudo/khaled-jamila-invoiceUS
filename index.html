@@ -3,1133 +3,836 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>محلات خالد جميلة - نظام الفواتير</title>
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
     <style>
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            background: #f1f1f1;
-            color: #000;
-            font-family: Arial, Tahoma, sans-serif;
-            font-weight: bold;
-        }
-
-        input,
-        textarea,
-        button,
-        select {
-            font-family: Arial, Tahoma, sans-serif;
+        body, table, th, td, input, select, button, div, span, p, h1, h2, h3, label {
+            font-weight: bold !important;
+            color: #000000 !important;
+            -webkit-print-color-adjust: exact;
         }
 
         .invoice-container {
-            width: 100%;
-            max-width: 760px;
-            margin: 10px auto;
-            background: #fff;
-            padding: 14px;
-            border: 2px solid #000;
-            border-radius: 8px;
-        }
-
-        /* اتجاه الحقول العربية */
-        .arabic-input {
-            direction: rtl;
-            text-align: right;
-        }
-
-        /* اتجاه الأرقام */
-        .number-input {
-            direction: ltr;
-            text-align: left;
-        }
-
-        /* السعر */
-        .money {
-            direction: ltr;
-            text-align: left;
-            white-space: nowrap;
-            unicode-bidi: plaintext;
-        }
-
-        /* الكمية */
-        .qty {
-            direction: ltr;
-            text-align: center;
-            white-space: nowrap;
-        }
-
-        /* رقم الفاتورة */
-        .invoice-number {
-            direction: ltr;
-            text-align: center;
-        }
-
-        /* الجدول */
-        .invoice-table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-        }
-
-        .invoice-table th,
-        .invoice-table td {
-            border: 1.5px solid #000;
-            padding: 6px 5px;
             font-size: 13px;
-            color: #000;
-            vertical-align: middle;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 12px;
+            box-sizing: border-box;
         }
 
-        .invoice-table th {
-            background: #e5e5e5;
-            text-align: center;
+        .invoice-table th, .invoice-table td {
+            padding-top: 4px !important;
+            padding-bottom: 4px !important;
+            padding-left: 6px !important;
+            padding-right: 6px !important;
+            font-size: 12px !important;
         }
 
-        .invoice-table .details {
-            text-align: right;
-            direction: rtl;
-        }
-
-        .invoice-table .price {
-            direction: ltr;
-            text-align: left;
-        }
-
-        .invoice-table .quantity {
-            direction: ltr;
-            text-align: center;
-        }
-
-        .invoice-table .total {
-            direction: ltr;
-            text-align: left;
-        }
-
-        /* مربعات الإجمالي */
-        .summary-box {
-            border: 2px solid #000;
-            background: #eee;
-            min-height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 12px;
-            border-radius: 5px;
-        }
-
-        .summary-label {
+        /* الاسم والعنوان من اليمين */
+        #custName,
+        #custAddress {
             direction: rtl;
             text-align: right;
         }
 
-        .summary-value {
+        /* إعدادات السعر والكمية */
+        .price-cell {
             direction: ltr;
             text-align: left;
             white-space: nowrap;
-            font-size: 16px;
         }
 
-        /* الملاحظات */
-        .notes-box {
-            border: 2px solid #000;
-            padding: 8px 10px;
-            min-height: 55px;
-            background: #fff;
+        .qty-cell {
+            direction: ltr;
+            text-align: center;
         }
 
-        .notes-title {
-            margin-bottom: 5px;
-            text-align: right;
-        }
-
-        .notes-text {
-            text-align: right;
-            direction: rtl;
-            line-height: 1.6;
-        }
-
-        /* الطباعة */
+        /* إعدادات الطباعة */
         @media print {
-
-            @page {
-                size: A4 portrait;
-                margin: 8mm;
-            }
-
-            body {
-                background: white !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-
             .no-print {
                 display: none !important;
             }
 
-            .invoice-container {
-                width: 100% !important;
-                max-width: 100% !important;
+            body {
+                background-color: white !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                border: 0 !important;
+            }
+
+            .invoice-container {
+                border: none !important;
                 box-shadow: none !important;
-            }
-
-            .invoice-table th,
-            .invoice-table td {
-                padding: 5px 4px !important;
-                font-size: 11px !important;
-            }
-
-            .invoice-header {
-                margin-bottom: 5px !important;
-                padding-bottom: 5px !important;
-            }
-
-            input,
-            textarea {
-                border: 0 !important;
-                background: transparent !important;
-                outline: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
             }
         }
-
     </style>
 </head>
 
-<body>
+<body class="bg-gray-100 min-h-screen py-2 px-1">
 
-<div class="invoice-container" id="invoice">
+    <div class="invoice-container rounded-lg shadow-md border-2 border-black">
 
-    <!-- ================= رأس الفاتورة ================= -->
+        <!-- رأس الفاتورة -->
+        <div class="text-center border-b-2 border-black pb-2 mb-2">
 
-    <div class="invoice-header text-center border-b-2 border-black pb-2 mb-3">
+            <h1 class="text-xl font-black mb-0.5">
+                محلات خالد جميلة
+            </h1>
 
-        <h1 class="text-2xl mb-1">
-            محلات خالد جميلة
-        </h1>
+            <p class="text-xs mb-0.5">
+                بيع جميع الملابس الداخلية رجالي نسائي
+            </p>
 
-        <div class="text-sm mb-1">
-            بيع جميع الملابس الداخلية رجالي نسائي
-        </div>
+            <p class="text-[11px] mb-0.5">
+                الفرع الأول: الشورجة - شارع الفرفوري القديم - عمارة الكواز - مقابل سوق المعاضد
+            </p>
 
-        <div class="text-xs mb-1">
-            الفرع الأول: الشورجة - شارع الفرفوري القديم - عمارة الكواز - مقابل سوق المعاضد
-        </div>
+            <p class="text-[11px] mb-1">
+                الفرع الثاني: الشورجة - عمارة البلور محلات خالد جميلة
+            </p>
 
-        <div class="text-xs mb-2">
-            الفرع الثاني: الشورجة - عمارة البلور - محلات خالد جميلة
-        </div>
+            <div class="flex justify-center items-center gap-4 text-[11px] mt-0.5">
 
-        <div class="flex justify-center gap-6 text-xs">
+                <span>
+                    هاتف:
+                    <bdi dir="ltr">07713505039</bdi>
+                </span>
 
-            <span>
-                هاتف:
-                <bdi dir="ltr">07713505039</bdi>
-            </span>
+                <span class="bg-blue-100 px-2 py-0.5 rounded text-blue-900 border border-blue-500">
+                    تيليجرام:
+                    <bdi dir="ltr">u60976</bdi>
+                </span>
 
-            <span>
-                تيليجرام:
-                <bdi dir="ltr">u60976</bdi>
-            </span>
-
-        </div>
-
-    </div>
-
-
-    <!-- ================= بيانات الفاتورة ================= -->
-
-    <div class="grid grid-cols-2 gap-2 mb-3">
-
-        <!-- التاريخ -->
-        <div>
-            <label class="block mb-1 text-sm">
-                التاريخ:
-            </label>
-
-            <input
-                type="date"
-                id="invDate"
-                class="number-input w-full border-2 border-black rounded p-2 bg-gray-50"
-            >
-        </div>
-
-
-        <!-- رقم الفاتورة -->
-        <div>
-            <label class="block mb-1 text-sm">
-                رقم الفاتورة (N):
-            </label>
-
-            <input
-                type="text"
-                id="invNumber"
-                oninput="saveInvNum(this.value)"
-                class="invoice-number w-full border-2 border-black rounded p-2 bg-gray-50"
-            >
-        </div>
-
-
-        <!-- اسم الزبون -->
-        <div>
-            <label class="block mb-1 text-sm">
-                حضرة السيد:
-            </label>
-
-            <input
-                type="text"
-                id="custName"
-                placeholder="اسم الزبون"
-                class="arabic-input w-full border-2 border-black rounded p-2 bg-gray-50"
-            >
-        </div>
-
-
-        <!-- العنوان -->
-        <div>
-            <label class="block mb-1 text-sm">
-                العنوان:
-            </label>
-
-            <input
-                type="text"
-                id="custAddress"
-                placeholder="عنوان الزبون"
-                class="arabic-input w-full border-2 border-black rounded p-2 bg-gray-50"
-            >
-        </div>
-
-    </div>
-
-
-    <!-- ================= إضافة مادة ================= -->
-
-    <div class="no-print bg-gray-50 p-3 rounded border-2 border-black mb-3">
-
-        <h3
-            id="formTitle"
-            class="text-sm mb-2"
-        >
-            إضافة مادة للفاتورة - الحد الأقصى 30 مادة
-        </h3>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
-
-            <input
-                type="text"
-                id="itemName"
-                placeholder="اسم المادة / الوصف"
-                class="arabic-input border-2 border-black rounded p-2 text-sm"
-            >
-
-            <input
-                type="number"
-                step="any"
-                id="itemPrice"
-                placeholder="السعر بالدولار"
-                class="number-input border-2 border-black rounded p-2 text-sm"
-            >
-
-            <input
-                type="number"
-                step="any"
-                id="itemQty"
-                value="1"
-                placeholder="العدد"
-                class="qty border-2 border-black rounded p-2 text-sm"
-            >
-
-        </div>
-
-        <div class="flex gap-2">
-
-            <button
-                id="actionBtn"
-                onclick="saveItem()"
-                class="flex-1 bg-blue-600 text-white py-2 rounded border-2 border-black"
-            >
-                إضافة المادة
-            </button>
-
-            <button
-                onclick="clearForm()"
-                class="bg-gray-500 text-white px-5 py-2 rounded border-2 border-black"
-            >
-                مسح الكل
-            </button>
-
-        </div>
-
-    </div>
-
-
-    <!-- ================= جدول المواد ================= -->
-
-    <div class="overflow-x-auto mb-3">
-
-        <table class="invoice-table">
-
-            <thead>
-
-                <tr>
-
-                    <th style="width:45px;">
-                        ت
-                    </th>
-
-                    <th>
-                        التفاصيل
-                    </th>
-
-                    <th style="width:95px;">
-                        السعر $
-                    </th>
-
-                    <th style="width:65px;">
-                        العدد
-                    </th>
-
-                    <th style="width:110px;">
-                        المبلغ الكلي $
-                    </th>
-
-                    <th
-                        class="no-print"
-                        style="width:115px;"
-                    >
-                        التحكم
-                    </th>
-
-                </tr>
-
-            </thead>
-
-            <tbody id="itemsTable">
-
-                <tr>
-                    <td
-                        colspan="6"
-                        style="text-align:center;"
-                    >
-                        لا توجد مواد مضافة حالياً
-                    </td>
-                </tr>
-
-            </tbody>
-
-        </table>
-
-    </div>
-
-
-    <!-- ================= الإجماليات ================= -->
-
-    <div class="grid grid-cols-2 gap-3 mb-3">
-
-        <!-- إجمالي القطع -->
-        <div class="summary-box">
-
-            <span class="summary-label">
-                إجمالي القطع:
-            </span>
-
-            <span
-                id="totalQtyText"
-                class="summary-value"
-            >
-                0
-            </span>
-
-        </div>
-
-
-        <!-- المجموع الكلي -->
-        <div class="summary-box">
-
-            <span class="summary-label">
-                المجموع الكلي:
-            </span>
-
-            <span
-                id="grandTotal"
-                class="summary-value"
-            >
-                0 $
-            </span>
-
-        </div>
-
-    </div>
-
-
-    <!-- ================= الملاحظات ================= -->
-
-    <div class="notes-box mb-3">
-
-        <div class="notes-title">
-            الملاحظات:
-        </div>
-
-        <textarea
-            id="notes"
-            class="no-print arabic-input w-full border border-gray-400 rounded p-2"
-            rows="2"
-            placeholder="اكتب الملاحظات هنا..."
-        ></textarea>
-
-        <!-- يظهر عند الطباعة -->
-        <div
-            id="printNotes"
-            class="notes-text"
-        >
-            الخطأ مرجوع للطرفين
-        </div>
-
-    </div>
-
-
-    <!-- ================= التوقيع ================= -->
-
-    <div class="flex justify-between items-end mb-2">
-
-        <div class="text-right">
-
-            <div class="mb-8">
-                التوقيع:
             </div>
 
-            <div
-                style="
-                    width:120px;
-                    border-top:2px solid #000;
-                "
-            ></div>
-
         </div>
 
-        <div
-            class="text-right"
-            style="direction:rtl;"
-        >
-            <div>
-                مع الشكر والتقدير
+
+        <!-- بيانات الفاتورة الأساسية -->
+        <div class="grid grid-cols-2 gap-2 mb-2 text-xs">
+
+            <div class="flex flex-col">
+
+                <label class="mb-0.5">
+                    التاريخ:
+                </label>
+
+                <input
+                    type="date"
+                    id="invDate"
+                    class="border-2 border-black rounded p-1 bg-gray-50 text-xs"
+                >
+
             </div>
+
+
+            <div class="flex flex-col">
+
+                <label class="mb-0.5">
+                    رقم الفاتورة (N):
+                </label>
+
+                <input
+                    type="text"
+                    id="invNumber"
+                    oninput="saveInvNum(this.value)"
+                    class="border-2 border-black rounded p-1 bg-gray-50 text-center text-xs"
+                >
+
+            </div>
+
+
+            <div class="flex flex-col">
+
+                <label class="mb-0.5">
+                    حضرة السيد:
+                </label>
+
+                <input
+                    type="text"
+                    id="custName"
+                    placeholder="اسم الزبون"
+                    class="border-2 border-black rounded p-1 bg-gray-50 text-xs"
+                >
+
+            </div>
+
+
+            <div class="flex flex-col">
+
+                <label class="mb-0.5">
+                    العنوان:
+                </label>
+
+                <input
+                    type="text"
+                    id="custAddress"
+                    placeholder="عنوان الزبون"
+                    class="border-2 border-black rounded p-1 bg-gray-50 text-xs"
+                >
+
+            </div>
+
         </div>
 
-    </div>
 
+        <!-- إضافة المواد -->
+        <div class="no-print bg-gray-50 p-2 rounded border-2 border-black mb-2">
 
-    <!-- ================= أزرار ================= -->
+            <h3
+                id="formTitle"
+                class="text-xs mb-1.5 font-black"
+            >
+                إضافة مادة للفاتورة (الحد الأقصى 30 مادة):
+            </h3>
 
-    <div class="no-print grid grid-cols-2 gap-2 mt-3">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-1.5 mb-1.5">
 
-        <button
-            onclick="printInvoice()"
-            class="bg-blue-600 text-white py-2 rounded border-2 border-black"
-        >
-            🖨️ طباعة مباشرة
-        </button>
+                <input
+                    type="text"
+                    id="itemName"
+                    placeholder="اسم المادة / الوصف"
+                    class="border-2 border-black rounded p-1 text-xs"
+                >
 
-        <button
-            onclick="downloadPDF()"
-            class="bg-green-600 text-white py-2 rounded border-2 border-black"
-        >
-            📥 تحميل PDF
-        </button>
+                <input
+                    type="number"
+                    step="any"
+                    id="itemPrice"
+                    placeholder="السعر"
+                    class="border-2 border-black rounded p-1 text-xs"
+                >
 
-    </div>
+                <input
+                    type="number"
+                    id="itemQty"
+                    value="1"
+                    placeholder="الكمية"
+                    class="border-2 border-black rounded p-1 text-xs"
+                >
 
-</div>
+            </div>
 
+            <div class="flex gap-2">
 
-<script>
+                <button
+                    id="actionBtn"
+                    onclick="saveItem()"
+                    class="flex-1 bg-blue-600 text-white py-1 rounded border-2 border-black hover:bg-blue-700 transition text-xs"
+                >
+                    إضافة المادة
+                </button>
 
-    /* ================= الإعدادات ================= */
+                <button
+                    onclick="clearForm()"
+                    class="bg-gray-400 text-white px-3 py-1 rounded border-2 border-black text-xs"
+                >
+                    مسح الكل
+                </button>
 
-    const MAX_ROWS = 30;
-    const STORAGE_NUM_KEY = 'kj_inv_num_v2';
+            </div>
 
-    let items = [];
-    let editingIndex = -1;
+        </div>
 
 
-    /* ================= التاريخ ================= */
+        <!-- جدول المواد -->
+        <div class="overflow-x-auto mb-2">
 
-    document.getElementById('invDate').valueAsDate = new Date();
+            <table class="invoice-table w-full border-collapse border-2 border-black text-center text-xs">
 
+                <thead>
 
-    /* ================= أرقام الفواتير ================= */
+                    <tr class="bg-gray-200 border-b-2 border-black">
 
-    function padNum(n) {
-        return String(n).padStart(6, '0');
-    }
+                        <th class="border border-black p-1 w-8">
+                            ت
+                        </th>
 
+                        <th class="border border-black p-1">
+                            التفاصيل
+                        </th>
 
-    function loadSavedData() {
+                        <th class="border border-black p-1 w-20">
+                            السعر
+                        </th>
 
-        const savedNum =
-            localStorage.getItem(STORAGE_NUM_KEY);
+                        <th class="border border-black p-1 w-12">
+                            الكمية
+                        </th>
 
-        const currentNum =
-            savedNum !== null ? savedNum : 1;
+                        <th class="border border-black p-1 w-24">
+                            المبلغ الكلي
+                        </th>
 
-        document.getElementById('invNumber').value =
-            padNum(currentNum);
-
-    }
-
-
-    function saveInvNum(value) {
-
-        localStorage.setItem(
-            STORAGE_NUM_KEY,
-            value
-        );
-
-    }
-
-
-    function incrementInvNum() {
-
-        const input =
-            document.getElementById('invNumber');
-
-        const cleanVal =
-            input.value.replace(/^0+/, '') || '0';
-
-        const next =
-            (parseInt(cleanVal, 10) || 0) + 1;
-
-        localStorage.setItem(
-            STORAGE_NUM_KEY,
-            next
-        );
-
-        input.value = padNum(next);
-
-    }
-
-
-    loadSavedData();
-
-
-    /* ================= إضافة / تعديل مادة ================= */
-
-    function saveItem() {
-
-        const name =
-            document.getElementById('itemName').value.trim();
-
-        const price =
-            parseFloat(
-                document.getElementById('itemPrice').value
-            ) || 0;
-
-        const qty =
-            parseFloat(
-                document.getElementById('itemQty').value
-            ) || 1;
-
-
-        if (!name || price <= 0 || qty <= 0) {
-
-            alert(
-                'يرجى إدخال اسم المادة والسعر والعدد بشكل صحيح'
-            );
-
-            return;
-
-        }
-
-
-        if (
-            items.length >= MAX_ROWS &&
-            editingIndex === -1
-        ) {
-
-            alert(
-                'عذراً، الحد الأقصى هو 30 مادة'
-            );
-
-            return;
-
-        }
-
-
-        const total = price * qty;
-
-
-        if (editingIndex === -1) {
-
-            items.push({
-                name,
-                price,
-                qty,
-                total
-            });
-
-        } else {
-
-            items[editingIndex] = {
-                name,
-                price,
-                qty,
-                total
-            };
-
-            editingIndex = -1;
-
-            setAddMode();
-
-        }
-
-
-        clearFormInputs();
-
-        renderTable();
-
-    }
-
-
-    /* ================= تعديل مادة ================= */
-
-    function editItem(index) {
-
-        const item = items[index];
-
-        document.getElementById('itemName').value =
-            item.name;
-
-        document.getElementById('itemPrice').value =
-            item.price;
-
-        document.getElementById('itemQty').value =
-            item.qty;
-
-        editingIndex = index;
-
-        document.getElementById('actionBtn').innerText =
-            'تحديث المادة';
-
-        document.getElementById('actionBtn').className =
-            'flex-1 bg-amber-600 text-white py-2 rounded border-2 border-black';
-
-        document.getElementById('formTitle').innerText =
-            'تعديل المادة رقم ' + (index + 1);
-
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-
-    }
-
-
-    /* ================= حذف مادة ================= */
-
-    function deleteItem(index) {
-
-        if (
-            !confirm('هل تريد حذف هذه المادة؟')
-        ) {
-            return;
-        }
-
-        if (editingIndex === index) {
-            clearFormInputs();
-        }
-
-        if (editingIndex > index) {
-            editingIndex--;
-        }
-
-        items.splice(index, 1);
-
-        renderTable();
-
-    }
-
-
-    /* ================= وضع الإضافة ================= */
-
-    function setAddMode() {
-
-        editingIndex = -1;
-
-        document.getElementById('actionBtn').innerText =
-            'إضافة المادة';
-
-        document.getElementById('actionBtn').className =
-            'flex-1 bg-blue-600 text-white py-2 rounded border-2 border-black';
-
-        document.getElementById('formTitle').innerText =
-            'إضافة مادة للفاتورة - الحد الأقصى 30 مادة';
-
-    }
-
-
-    /* ================= تنظيف الحقول ================= */
-
-    function clearFormInputs() {
-
-        document.getElementById('itemName').value = '';
-        document.getElementById('itemPrice').value = '';
-        document.getElementById('itemQty').value = '1';
-
-        setAddMode();
-
-    }
-
-
-    function clearForm() {
-
-        if (
-            !confirm('هل تريد مسح الفاتورة الحالية بالكامل؟')
-        ) {
-            return;
-        }
-
-        items = [];
-
-        clearFormInputs();
-
-        document.getElementById('custName').value = '';
-        document.getElementById('custAddress').value = '';
-        document.getElementById('notes').value = '';
-
-        renderTable();
-
-    }
-
-
-    /* ================= تنسيق الأرقام ================= */
-
-    function formatNumber(number) {
-
-        return Number(number).toLocaleString(
-            'en-US',
-            {
-                maximumFractionDigits: 2
-            }
-        );
-
-    }
-
-
-    /* ================= عرض الجدول ================= */
-
-    function renderTable() {
-
-        const tbody =
-            document.getElementById('itemsTable');
-
-        tbody.innerHTML = '';
-
-        let grandTotal = 0;
-        let totalQuantity = 0;
-
-
-        if (items.length === 0) {
-
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6"
-                        style="text-align:center;padding:10px;">
-                        لا توجد مواد مضافة حالياً
-                    </td>
-                </tr>
-            `;
-
-        } else {
-
-            items.forEach((item, index) => {
-
-                grandTotal += item.total;
-                totalQuantity += item.qty;
-
-                tbody.innerHTML += `
-
-                    <tr>
-
-                        <td>
-                            ${index + 1}
-                        </td>
-
-                        <td class="details">
-                            ${escapeHtml(item.name)}
-                        </td>
-
-                        <td class="price">
-                            ${formatNumber(item.price)} $
-                        </td>
-
-                        <td class="quantity">
-                            ${formatNumber(item.qty)}
-                        </td>
-
-                        <td class="total">
-                            ${formatNumber(item.total)} $
-                        </td>
-
-                        <td class="no-print">
-
-                            <div
-                                style="
-                                    display:flex;
-                                    justify-content:center;
-                                    gap:4px;
-                                "
-                            >
-
-                                <button
-                                    onclick="editItem(${index})"
-                                    style="
-                                        background:#f59e0b;
-                                        color:#fff;
-                                        border:1px solid #000;
-                                        border-radius:4px;
-                                        padding:3px 7px;
-                                        font-size:11px;
-                                    "
-                                >
-                                    تعديل
-                                </button>
-
-                                <button
-                                    onclick="deleteItem(${index})"
-                                    style="
-                                        background:#dc2626;
-                                        color:#fff;
-                                        border:1px solid #000;
-                                        border-radius:4px;
-                                        padding:3px 7px;
-                                        font-size:11px;
-                                    "
-                                >
-                                    حذف
-                                </button>
-
-                            </div>
-
-                        </td>
+                        <th class="no-print border border-black p-1 w-24">
+                            التحكم
+                        </th>
 
                     </tr>
 
-                `;
+                </thead>
 
-            });
+
+                <tbody id="itemsTable">
+
+                    <tr>
+                        <td
+                            colspan="6"
+                            class="p-2 text-center border border-black text-gray-500 text-xs"
+                        >
+                            لا توجد مواد مضافة حالياً
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- إجمالي الكمية والمجموع الكلي -->
+        <div class="grid grid-cols-2 gap-2 mb-2">
+
+            <div class="bg-gray-200 border-2 border-black p-1.5 rounded text-xs flex justify-between items-center">
+
+                <span>
+                    إجمالي الكمية:
+                </span>
+
+                <span id="totalQtyText">
+                    0 قطعة
+                </span>
+
+            </div>
+
+
+            <div class="bg-gray-200 border-2 border-black p-1.5 rounded text-xs flex justify-between items-center">
+
+                <span>
+                    المجموع الكلي:
+                </span>
+
+                <span
+                    id="grandTotal"
+                    class="text-xs font-black"
+                    dir="ltr"
+                >
+                    <bdi>0 $</bdi>
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- التوقيع والملاحظات -->
+        <div class="flex justify-between items-end mb-1 text-xs">
+
+            <div class="text-red-600 font-black text-xs">
+                الخطأ مرجوع للطرفين
+            </div>
+
+            <div class="text-left">
+
+                <p class="mb-4">
+                    التوقيع:
+                </p>
+
+                <div class="border-t-2 border-black w-24"></div>
+
+            </div>
+
+        </div>
+
+
+        <!-- أزرار الطباعة والتحميل -->
+        <div class="no-print grid grid-cols-2 gap-2 mt-2">
+
+            <button
+                onclick="printInvoice()"
+                class="w-full bg-blue-600 text-white py-1.5 rounded border-2 border-black text-xs hover:bg-blue-700 transition"
+            >
+                🖨️ طباعة مباشرة
+            </button>
+
+            <button
+                onclick="downloadPDF()"
+                class="w-full bg-green-600 text-white py-1.5 rounded border-2 border-black text-xs hover:bg-green-700 transition"
+            >
+                📥 تحميل كـ PDF
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        document.getElementById('invDate').valueAsDate = new Date();
+
+        let items = [];
+        let editingIndex = -1;
+
+        const MAX_ROWS = 30;
+        const STORAGE_NUM_KEY = 'kj_inv_num_v1';
+
+
+        function padNum(n) {
+            return String(n).padStart(6, '0');
+        }
+
+
+        function loadSavedData() {
+
+            const savedNum =
+                localStorage.getItem(STORAGE_NUM_KEY);
+
+            const currentNum =
+                savedNum !== null ? savedNum : 1;
+
+            document.getElementById('invNumber').value =
+                padNum(currentNum);
 
         }
 
 
-        document.getElementById('grandTotal').innerHTML =
-            `<span dir="ltr">${formatNumber(grandTotal)} $</span>`;
-
-
-        document.getElementById('totalQtyText').innerHTML =
-            `<span dir="ltr">${formatNumber(totalQuantity)}</span>`;
-
-    }
-
-
-    /* ================= حماية النص ================= */
-
-    function escapeHtml(text) {
-
-        const div =
-            document.createElement('div');
-
-        div.textContent = text;
-
-        return div.innerHTML;
-
-    }
-
-
-    /* ================= تجهيز الملاحظات ================= */
-
-    function prepareNotesForPrint() {
-
-        const notes =
-            document.getElementById('notes').value.trim();
-
-        const printNotes =
-            document.getElementById('printNotes');
-
-        if (notes) {
-
-            printNotes.innerHTML =
-                escapeHtml(notes).replace(/\n/g, '<br>');
-
-        } else {
-
-            printNotes.innerHTML =
-                'الخطأ مرجوع للطرفين';
-
+        function saveInvNum(val) {
+            localStorage.setItem(
+                STORAGE_NUM_KEY,
+                val
+            );
         }
 
-    }
 
+        function incrementInvNum() {
 
-    /* ================= بعد الطباعة ================= */
+            const input =
+                document.getElementById('invNumber');
 
-    function resetAfterPrint() {
+            const cleanVal =
+                input.value.replace(/^0+/, '') || '0';
 
-        items = [];
+            const next =
+                (parseInt(cleanVal, 10) || 0) + 1;
 
-        document.getElementById('custName').value = '';
-        document.getElementById('custAddress').value = '';
-        document.getElementById('notes').value = '';
-
-        clearFormInputs();
-
-        renderTable();
-
-        incrementInvNum();
-
-    }
-
-
-    /* ================= الطباعة ================= */
-
-    function printInvoice() {
-
-        if (items.length === 0) {
-
-            alert(
-                'لا يمكن طباعة فاتورة فارغة'
+            localStorage.setItem(
+                STORAGE_NUM_KEY,
+                next
             );
 
-            return;
-
-        }
-
-        prepareNotesForPrint();
-
-        /*
-         * ننتظر انتهاء نافذة الطباعة
-         * قبل تصفير الفاتورة
-         */
-        window.onafterprint = function () {
-
-            window.onafterprint = null;
-
-            resetAfterPrint();
-
-        };
-
-        window.print();
-
-    }
-
-
-    /* ================= PDF ================= */
-
-    async function downloadPDF() {
-
-        if (items.length === 0) {
-
-            alert(
-                'لا يمكن تحميل فاتورة فارغة'
-            );
-
-            return;
+            input.value =
+                padNum(next);
 
         }
 
 
-        prepareNotesForPrint();
+        loadSavedData();
 
 
-        const element =
-            document.getElementById('invoice');
+        function saveItem() {
 
-        const invNum =
-            document.getElementById('invNumber').value ||
-            '000001';
+            const name =
+                document.getElementById('itemName')
+                .value.trim();
 
-        const custName =
-            document.getElementById('custName').value.trim();
+            const price =
+                parseFloat(
+                    document.getElementById('itemPrice').value
+                ) || 0;
 
-
-        let fileName =
-            custName
-                ? `${custName}_${invNum}.pdf`
-                : `${invNum}.pdf`;
-
-
-        /*
-         * إخفاء العناصر الخاصة بالتحكم
-         */
-        const noPrintElements =
-            element.querySelectorAll('.no-print');
-
-        noPrintElements.forEach(el => {
-            el.style.display = 'none';
-        });
+            const qty =
+                parseFloat(
+                    document.getElementById('itemQty').value
+                ) || 1;
 
 
-        const opt = {
+            if (!name || price <= 0) {
 
-            margin: 5,
+                alert(
+                    'يرجى إدخال اسم المادة والسعر بشكل صحيح'
+                );
 
-            filename: fileName,
-
-            image: {
-                type: 'jpeg',
-                quality: 0.98
-            },
-
-            html2canvas: {
-                scale: 2,
-                useCORS: true,
-                letterRendering: true
-            },
-
-            jsPDF: {
-                unit: 'mm',
-                format: 'a4',
-                orientation: 'portrait'
+                return;
             }
 
-        };
+
+            if (
+                items.length >= MAX_ROWS &&
+                editingIndex === -1
+            ) {
+
+                alert(
+                    'عذراً، وصل الحد الأقصى (30 مادة) لضمان طباعتها في صفحة واحدة!'
+                );
+
+                return;
+            }
 
 
-        try {
+            const total =
+                price * qty;
 
-            await html2pdf()
-                .from(element)
-                .set(opt)
-                .save();
 
-        } finally {
+            if (editingIndex === -1) {
 
-            noPrintElements.forEach(el => {
-                el.style.display = '';
+                items.push({
+                    name,
+                    price,
+                    qty,
+                    total
+                });
+
+            } else {
+
+                items[editingIndex] = {
+                    name,
+                    price,
+                    qty,
+                    total
+                };
+
+                editingIndex = -1;
+
+                document.getElementById('actionBtn').innerText =
+                    'إضافة المادة';
+
+                document.getElementById('actionBtn').className =
+                    'flex-1 bg-blue-600 text-white py-1 rounded border-2 border-black hover:bg-blue-700 transition text-xs';
+
+                document.getElementById('formTitle').innerText =
+                    'إضافة مادة للفاتورة (الحد الأقصى 30 مادة):';
+
+            }
+
+
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemPrice').value = '';
+            document.getElementById('itemQty').value = '1';
+
+            renderTable();
+
+        }
+
+
+        function editItem(index) {
+
+            const item =
+                items[index];
+
+            document.getElementById('itemName').value =
+                item.name;
+
+            document.getElementById('itemPrice').value =
+                item.price;
+
+            document.getElementById('itemQty').value =
+                item.qty;
+
+            editingIndex = index;
+
+            document.getElementById('actionBtn').innerText =
+                'تحديث المادة';
+
+            document.getElementById('actionBtn').className =
+                'flex-1 bg-amber-600 text-white py-1 rounded border-2 border-black hover:bg-amber-700 transition text-xs';
+
+            document.getElementById('formTitle').innerText =
+                'تعديل المادة رقم ' + (index + 1);
+
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
             });
+
+        }
+
+
+        function deleteItem(index) {
+
+            if (editingIndex === index) {
+                clearFormInputs();
+            }
+
+            if (editingIndex > index) {
+                editingIndex--;
+            }
+
+            items.splice(index, 1);
+
+            renderTable();
+
+        }
+
+
+        function clearFormInputs() {
+
+            editingIndex = -1;
+
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemPrice').value = '';
+            document.getElementById('itemQty').value = '1';
+
+            document.getElementById('actionBtn').innerText =
+                'إضافة المادة';
+
+            document.getElementById('actionBtn').className =
+                'flex-1 bg-blue-600 text-white py-1 rounded border-2 border-black hover:bg-blue-700 transition text-xs';
+
+            document.getElementById('formTitle').innerText =
+                'إضافة مادة للفاتورة (الحد الأقصى 30 مادة):';
+
+        }
+
+
+        function clearForm() {
+
+            items = [];
+
+            clearFormInputs();
+
+            document.getElementById('custName').value = '';
+            document.getElementById('custAddress').value = '';
+
+            renderTable();
+
+        }
+
+
+        function renderTable() {
+
+            const tbody =
+                document.getElementById('itemsTable');
+
+            tbody.innerHTML = '';
+
+            let grandTotal = 0;
+            let totalQuantity = 0;
+
+
+            if (items.length === 0) {
+
+                tbody.innerHTML = `
+                    <tr>
+                        <td
+                            colspan="6"
+                            class="p-2 text-center border border-black text-gray-500 text-xs"
+                        >
+                            لا توجد مواد مضافة حالياً
+                        </td>
+                    </tr>
+                `;
+
+            } else {
+
+                items.forEach((item, index) => {
+
+                    grandTotal += item.total;
+                    totalQuantity += item.qty;
+
+
+                    tbody.innerHTML += `
+
+                        <tr class="border-b border-black">
+
+                            <td class="border border-black p-1 text-xs">
+                                ${index + 1}
+                            </td>
+
+                            <td
+                                class="border border-black p-1 text-right pr-2 text-xs"
+                                style="direction:rtl; text-align:right;"
+                            >
+                                ${item.name}
+                            </td>
+
+                            <td
+                                class="border border-black p-1 text-xs price-cell"
+                            >
+                                <bdi dir="ltr">
+                                    ${item.price.toLocaleString('en-US')} $
+                                </bdi>
+                            </td>
+
+                            <td
+                                class="border border-black p-1 text-xs qty-cell"
+                            >
+                                ${item.qty}
+                            </td>
+
+                            <td
+                                class="border border-black p-1 text-xs price-cell"
+                            >
+                                <bdi dir="ltr">
+                                    ${item.total.toLocaleString('en-US')} $
+                                </bdi>
+                            </td>
+
+                            <td
+                                class="no-print border border-black p-0.5 text-center"
+                            >
+
+                                <div class="flex justify-center gap-1">
+
+                                    <button
+                                        onclick="editItem(${index})"
+                                        class="bg-amber-500 text-white px-1.5 py-0.5 rounded text-[10px] border border-black"
+                                    >
+                                        تعديل
+                                    </button>
+
+                                    <button
+                                        onclick="deleteItem(${index})"
+                                        class="bg-red-600 text-white px-1.5 py-0.5 rounded text-[10px] border border-black"
+                                    >
+                                        حذف
+                                    </button>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    `;
+
+                });
+
+            }
+
+
+            document.getElementById('grandTotal').innerHTML =
+                `<bdi dir="ltr">${grandTotal.toLocaleString('en-US')} $</bdi>`;
+
+
+            document.getElementById('totalQtyText').innerText =
+                totalQuantity + ' قطعة';
+
+        }
+
+
+        function resetAfterPrint() {
+
+            items = [];
+
+            document.getElementById('custName').value = '';
+            document.getElementById('custAddress').value = '';
+
+            clearFormInputs();
+
+            renderTable();
+
+            incrementInvNum();
+
+        }
+
+
+        function printInvoice() {
+
+            if (items.length === 0) {
+
+                alert(
+                    'لا يمكن طباعة فاتورة فارغة'
+                );
+
+                return;
+            }
+
+            window.print();
 
             resetAfterPrint();
 
         }
 
-    }
+
+        function downloadPDF() {
+
+            if (items.length === 0) {
+
+                alert(
+                    'لا يمكن تحميل فاتورة فارغة'
+                );
+
+                return;
+            }
 
 
-    /* ================= تشغيل أولي ================= */
+            const element =
+                document.querySelector('.invoice-container');
 
-    renderTable();
+            const invNum =
+                document.getElementById('invNumber').value ||
+                '000001';
 
-</script>
+            const custName =
+                document.getElementById('custName')
+                .value.trim();
+
+
+            const fileName =
+                custName
+                    ? `${custName}_${invNum}.pdf`
+                    : `${invNum}.pdf`;
+
+
+            const noPrintElements =
+                element.querySelectorAll('.no-print');
+
+
+            noPrintElements.forEach(el => {
+                el.style.display = 'none';
+            });
+
+
+            const opt = {
+
+                margin: 2,
+
+                filename: fileName,
+
+                image: {
+                    type: 'jpeg',
+                    quality: 0.98
+                },
+
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    letterRendering: true
+                },
+
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait'
+                }
+
+            };
+
+
+            html2pdf()
+                .from(element)
+                .set(opt)
+                .save()
+                .then(() => {
+
+                    noPrintElements.forEach(el => {
+                        el.style.display = '';
+                    });
+
+                    resetAfterPrint();
+
+                });
+
+        }
+
+    </script>
 
 </body>
 </html>
